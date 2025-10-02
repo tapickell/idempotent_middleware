@@ -2,7 +2,6 @@
 Pytest configuration and shared fixtures for idempotent_middleware tests.
 """
 
-
 import pytest
 
 
