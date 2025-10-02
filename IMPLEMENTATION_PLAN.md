@@ -967,6 +967,252 @@ jobs:
 
 ---
 
+## Parallelization Strategy: Multi-Agent Development
+
+### Agent Roles & Specializations
+
+To maximize parallel work, assign tickets to specialized agents:
+
+**Agent 1: "Core Logic Specialist"**
+- Focus: Algorithms, state machines, business logic
+- Skills: Complex logic, edge cases, mathematical correctness
+
+**Agent 2: "Storage & Infrastructure Specialist"**
+- Focus: Storage adapters, persistence, concurrency primitives
+- Skills: Database design, locking mechanisms, async I/O
+
+**Agent 3: "Integration & Framework Specialist"**
+- Focus: Framework adapters, middleware wrappers, HTTP handling
+- Skills: FastAPI/Flask internals, ASGI/WSGI specs
+
+**Agent 4: "Testing & QA Specialist"**
+- Focus: Test suites, fixtures, conformance testing
+- Skills: Property-based testing, concurrency testing, test design
+
+**Agent 5: "Observability & Tooling Specialist"**
+- Focus: Metrics, logging, CLI tools, documentation
+- Skills: Prometheus, structured logging, developer experience
+
+---
+
+### Parallelization by Phase
+
+#### **Phase 0: Setup (Sequential - 1 agent)**
+**Total Time: 2 hours → 2 hours (no parallelization benefit)**
+
+- Ticket 1: Project structure (must complete first)
+- Ticket 2: Configuration module (depends on Ticket 1)
+
+**Why Sequential:** Foundation must exist before parallel work begins.
+
+---
+
+#### **Phase 1: Core Abstractions (3 agents in parallel)**
+**Sequential Time: 11 hours → Parallel Time: 4 hours (63% faster)**
+
+| Agent | Tickets | Time | Dependencies |
+|-------|---------|------|--------------|
+| **Agent 1** | Ticket 5: Fingerprinting | 3h | Ticket 3 |
+| **Agent 2** | Ticket 3: Types<br>Ticket 4: Storage Interface<br>Ticket 6: Memory Adapter | 1h + 2h + 2h = 5h | Ticket 1 (setup) |
+| **Agent 3** | *(Idle - waiting for core)* | 0h | - |
+| **Agent 4** | *(Writing test fixtures in parallel)* | 2h | Ticket 3 |
+| **Agent 5** | *(Idle - not needed yet)* | 0h | - |
+
+**Parallel Execution:**
+```
+Hour 0-1:  Agent 2 → Ticket 3 (Types)
+Hour 1-2:  Agent 2 → Ticket 4 (Storage Interface) | Agent 1 → Ticket 5 (Fingerprinting)
+Hour 2-4:  Agent 2 → Ticket 6 (Memory Adapter) | Agent 1 → Ticket 5 (continues)
+           Agent 4 → Test fixtures (conftest.py)
+```
+
+**Critical Path:** Agent 2 (Ticket 3 → 4 → 6) = 5 hours
+**But:** Agent 1 can start Ticket 5 after hour 1 (Types complete)
+
+**Optimized Time: 4 hours** (Agent 2's path, with Agent 1 finishing at hour 4)
+
+---
+
+#### **Phase 2: Middleware Core (4 agents in parallel)**
+**Sequential Time: 13 hours → Parallel Time: 5 hours (62% faster)**
+
+| Agent | Tickets | Time | Dependencies |
+|-------|---------|------|--------------|
+| **Agent 1** | Ticket 9: State Machine | 4h | Tickets 4, 5, 7, 8 |
+| **Agent 2** | *(Idle or helping with tests)* | 0h | - |
+| **Agent 3** | Ticket 7: Header Filtering<br>Ticket 8: Replay Logic | 1h + 1h = 2h | Ticket 3 |
+| **Agent 4** | Unit tests for Tickets 5, 6 | 2h | Tickets 5, 6 complete |
+| **Agent 5** | *(Idle - not needed yet)* | 0h | - |
+
+**Then (after Ticket 9 completes):**
+| Agent | Tickets | Time | Dependencies |
+|-------|---------|------|--------------|
+| **Agent 1** | Ticket 10: Core Middleware | 4h | Ticket 9 |
+| **Agent 4** | Unit tests for Ticket 9 | 2h | Ticket 9 |
+
+**Parallel Execution:**
+```
+Hour 0-1:  Agent 3 → Ticket 7 (Headers)
+Hour 1-2:  Agent 3 → Ticket 8 (Replay) | Agent 4 → Unit tests (Tickets 5,6)
+Hour 2-6:  Agent 1 → Ticket 9 (State Machine - 4h)
+           Agent 4 → Continues tests
+Hour 6-10: Agent 1 → Ticket 10 (Core Middleware - 4h)
+           Agent 4 → Tests for Ticket 9
+```
+
+**Critical Path:** Ticket 7 → 8 → 9 → 10 = 1h + 1h + 4h + 4h = 10 hours
+**With parallel testing:** Tests happen during development, no added time
+
+**Optimized Time: 5 hours** (tickets can overlap more with test-driven development)
+
+---
+
+#### **Phase 3: Framework Adapters (2 agents in parallel)**
+**Sequential Time: 5 hours → Parallel Time: 3 hours (40% faster)**
+
+| Agent | Tickets | Time | Dependencies |
+|-------|---------|------|--------------|
+| **Agent 3** | Ticket 11: ASGI Adapter | 3h | Ticket 10 |
+| **Agent 2** | Ticket 12: WSGI Adapter (Nice-to-have) | 3h | Ticket 10 |
+
+**Parallel Execution:**
+```
+Hour 0-3:  Agent 3 → Ticket 11 (ASGI)
+           Agent 2 → Ticket 12 (WSGI) - in parallel
+```
+
+**Optimized Time: 3 hours** (both adapters developed simultaneously)
+
+---
+
+#### **Phase 4: Observability (3 agents in parallel)**
+**Sequential Time: 6 hours → Parallel Time: 3 hours (50% faster)**
+
+| Agent | Tickets | Time | Dependencies |
+|-------|---------|------|--------------|
+| **Agent 5** | Ticket 13: Metrics<br>Ticket 14: Logging | 2h + 1h = 3h | Ticket 10 |
+| **Agent 2** | Ticket 15: Cleanup Job | 2h | Ticket 6 |
+| **Agent 4** | Tests for observability | 2h | Tickets 13, 14 |
+
+**Parallel Execution:**
+```
+Hour 0-2:  Agent 5 → Ticket 13 (Metrics) | Agent 2 → Ticket 15 (Cleanup)
+Hour 2-3:  Agent 5 → Ticket 14 (Logging)
+Hour 0-3:  Agent 4 → Tests (concurrent with development)
+```
+
+**Optimized Time: 3 hours** (all tickets run in parallel)
+
+---
+
+#### **Phase 5: Testing & Hardening (4 agents in parallel)**
+**Sequential Time: 8 hours → Parallel Time: 4 hours (50% faster)**
+
+| Agent | Tickets | Time | Dependencies |
+|-------|---------|------|--------------|
+| **Agent 4** | Ticket 16: Conformance Tests (Scenarios 1-3) | 4h | Tickets 10, 11 |
+| **Agent 1** | Ticket 16: Conformance Tests (Scenarios 4-6) | 4h | Tickets 10, 11 |
+| **Agent 3** | Ticket 17: E2E Integration Tests | 3h | Ticket 11, 16 |
+| **Agent 2** | *(Helping with scenario tests)* | - | - |
+
+**Parallel Execution:**
+```
+Hour 0-4:  Agent 4 → Scenarios 1-3 (Happy path, Conflict, Concurrent)
+           Agent 1 → Scenarios 4-6 (TTL, Crash recovery, Size limits)
+Hour 4-7:  Agent 3 → Ticket 17 (E2E tests)
+```
+
+**Optimized Time: 4 hours** (scenario tests split across agents)
+
+---
+
+### Summary: Sequential vs Parallel
+
+| Phase | Sequential Time | Parallel Time (5 agents) | Speedup |
+|-------|----------------|--------------------------|---------|
+| Phase 0: Setup | 2h | 2h | 0% (sequential) |
+| Phase 1: Core | 11h | 4h | **63% faster** |
+| Phase 2: Middleware | 13h | 5h | **62% faster** |
+| Phase 3: Adapters | 5h | 3h | **40% faster** |
+| Phase 4: Observability | 6h | 3h | **50% faster** |
+| Phase 5: Testing | 8h | 4h | **50% faster** |
+| **Total MVP** | **45h** | **21h** | **53% faster** |
+
+---
+
+### Optimal Agent Allocation
+
+#### **3 Agents (Realistic for Weekend)**
+- **Agent 1 (Eric - Python Engineer):** Core logic, algorithms, state machine
+- **Agent 2 (Backend Specialist):** Storage adapters, concurrency, infrastructure
+- **Agent 3 (QA Specialist):** All testing, fixtures, conformance suites
+
+**Estimated Time: ~25 hours** (weekends become achievable)
+
+#### **5 Agents (Maximum Parallelization)**
+- **Agent 1:** Core logic
+- **Agent 2:** Storage & infrastructure
+- **Agent 3:** Framework adapters
+- **Agent 4:** Testing & QA
+- **Agent 5:** Observability & tooling
+
+**Estimated Time: ~21 hours** (diminishing returns after 5 agents)
+
+---
+
+### Coordination Requirements
+
+#### Communication Touchpoints
+1. **After Phase 0:** Align on project structure and config schema
+2. **After Phase 1:** Review storage adapter interface (contract)
+3. **Mid Phase 2:** Sync on state machine behavior (critical path)
+4. **After Phase 2:** Integration checkpoint (core middleware ready)
+5. **After Phase 5:** Final testing review
+
+#### Shared Artifacts (Potential Conflicts)
+- `conftest.py` - test fixtures (Agent 4 owns, others contribute)
+- `models.py` - core types (Agent 2 creates, others consume)
+- `exceptions.py` - custom exceptions (shared, needs coordination)
+- `pyproject.toml` - dependencies (lock file coordination needed)
+
+#### Conflict Resolution Strategy
+- **Option 1:** Feature branches per ticket, PR-based merges
+- **Option 2:** Pair programming for shared modules (models, exceptions)
+- **Option 3:** Contract-first development (define interfaces, then implement in parallel)
+
+---
+
+### Recommended Parallelization Plan (3 Agents)
+
+#### **Weekend Timeline with 3 Agents**
+
+**Friday Evening (2 hours):**
+- Agent 1 → Setup (Tickets 1-2)
+
+**Saturday Morning (4 hours):**
+- Agent 1 → Tickets 3, 5 (Types, Fingerprinting)
+- Agent 2 → Tickets 4, 6 (Storage interface, Memory adapter)
+- Agent 3 → Test fixtures setup
+
+**Saturday Afternoon (5 hours):**
+- Agent 1 → Tickets 9, 10 (State machine, Middleware core)
+- Agent 2 → Tickets 7, 8 (Headers, Replay)
+- Agent 3 → Unit tests for Phase 1
+
+**Sunday Morning (4 hours):**
+- Agent 1 → Ticket 11 (ASGI adapter)
+- Agent 2 → Tickets 13, 15 (Metrics, Cleanup)
+- Agent 3 → Ticket 14 (Logging)
+
+**Sunday Afternoon (6 hours):**
+- Agent 1 → Ticket 16 (Scenarios 1-3)
+- Agent 2 → Ticket 16 (Scenarios 4-6)
+- Agent 3 → Ticket 17 (E2E tests)
+
+**Total: ~21 hours** spread across 3 agents = **7 hours per agent** (doable in a weekend!)
+
+---
+
 ## Timeline & Phases
 
 ### Weekend Implementation Plan (MVP Scope)
