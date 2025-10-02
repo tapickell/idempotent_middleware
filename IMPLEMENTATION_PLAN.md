@@ -993,6 +993,16 @@ To maximize parallel work, assign tickets to specialized agents:
 - Focus: Metrics, logging, CLI tools, documentation
 - Skills: Prometheus, structured logging, developer experience
 
+**Agent 6: "Thing1" - Utility & Helper Specialist** ✅ *Available in .claude/thing1.md*
+- Focus: Utilities, validation, header processing, small isolated modules
+- Skills: Data transformation, edge case handling, helper functions
+- Philosophy: "Small, focused, tested, and trustworthy"
+
+**Agent 7: "Thing2" - Documentation & Examples Specialist** ✅ *Available in .claude/thing2.md*
+- Focus: Docstrings, examples, demo applications, developer guides
+- Skills: Technical writing, example code, API documentation
+- Philosophy: "If it's not documented, it doesn't exist"
+
 ---
 
 ### Parallelization by Phase
