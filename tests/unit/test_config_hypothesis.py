@@ -94,7 +94,14 @@ class TestIdempotencyConfigProperties:
 
     @given(
         methods=st.lists(
-            st.text(alphabet=st.characters(blacklist_characters="\x00\n"), min_size=1, max_size=20),
+            st.text(
+                alphabet=st.characters(
+                    blacklist_characters="\x00\n",
+                    blacklist_categories=("Cs",),  # Exclude surrogate characters
+                ),
+                min_size=1,
+                max_size=20,
+            ),
             min_size=1,
             max_size=5,
         ).filter(lambda ms: not all(m.upper() in VALID_HTTP_METHODS for m in ms))
