@@ -56,7 +56,7 @@ def compute_fingerprint(
     canonical_method = method.upper()
 
     # 2. Canonical path: lowercase, strip trailing / (except root)
-    canonical_path = path.lower()
+    canonical_path = path.lower() if path else "/"
     if canonical_path != "/" and canonical_path.endswith("/"):
         canonical_path = canonical_path.rstrip("/")
 
@@ -92,7 +92,7 @@ def _canonicalize_query_string(query_string: str) -> str:
     Returns:
         Canonicalized query string with sorted parameters
     """
-    if not query_string:
+    if not query_string or not query_string.strip():
         return ""
 
     # Parse query string into dict of lists

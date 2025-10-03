@@ -9,7 +9,7 @@ from datetime import datetime, timedelta
 from uuid import uuid4
 
 import pytest
-from hypothesis import assume, given
+from hypothesis import given
 from hypothesis import strategies as st
 from pydantic import ValidationError
 
@@ -55,12 +55,14 @@ fingerprint_strategy = st.text(alphabet="0123456789abcdef", min_size=64, max_siz
 # Invalid fingerprints
 invalid_fingerprint_strategy = st.one_of(
     # Wrong length
-    st.text(alphabet="0123456789abcdef", min_size=0, max_size=63),
+    st.text(alphabet="0123456789abcdef", min_size=1, max_size=63),
     st.text(alphabet="0123456789abcdef", min_size=65, max_size=100),
     # Contains invalid characters
     st.text(alphabet="0123456789abcdefGHIJKL", min_size=64, max_size=64),
     # Uppercase (should be lowercase)
     st.text(alphabet="0123456789ABCDEF", min_size=64, max_size=64),
+    # Empty string
+    st.just(""),
 )
 
 # Key strategy
@@ -81,9 +83,11 @@ datetime_strategy = st.datetimes(
 # UUID strategy
 uuid_strategy = st.builds(lambda: str(uuid4()))
 
-# Invalid UUID strategy
+# Invalid UUID strategy (must not match UUID v4 format)
 invalid_uuid_strategy = st.one_of(
-    st.text(alphabet="0123456789abcdef-", min_size=30, max_size=40),
+    # Not the right format for UUID (too short/long, missing dashes)
+    st.text(alphabet="0123456789abcdef", min_size=30, max_size=31),  # No dashes
+    st.text(alphabet="0123456789abcdef", min_size=33, max_size=40),  # Wrong length
     st.just("not-a-uuid"),
     st.just(""),
 )
@@ -131,26 +135,25 @@ class TestStoredResponseProperties:
                 body_b64=body_b64,
             )
 
-    @given(status=status_code_strategy, invalid_b64=invalid_base64_strategy)
-    def test_invalid_base64_rejected(self, status: int, invalid_b64: str) -> None:
+    @given(status=status_code_strategy)
+    def test_invalid_base64_rejected(self, status: int) -> None:
         """Invalid base64 should be rejected."""
-        try:
-            # Try to decode it first to confirm it's actually invalid
-            base64.b64decode(invalid_b64)
-            # If it succeeded, skip this test case
-            assume(False)
-        except Exception:
-            # Good, it's actually invalid
-            pass
+        # Use known invalid base64 strings
+        invalid_strings = [
+            "not-valid-base64!!!",  # Invalid characters
+            "abc!",  # Invalid character
+            "a",  # Improper padding/length
+        ]
 
-        with pytest.raises(ValidationError) as exc_info:
-            StoredResponse(
-                status=status,
-                headers={},
-                body_b64=invalid_b64,
-            )
+        for invalid_b64 in invalid_strings:
+            with pytest.raises(ValidationError) as exc_info:
+                StoredResponse(
+                    status=status,
+                    headers={},
+                    body_b64=invalid_b64,
+                )
 
-        assert "Invalid base64 encoding" in str(exc_info.value)
+            assert "Invalid base64 encoding" in str(exc_info.value)
 
     @given(body_b64=valid_base64_strategy)
     def test_get_body_bytes_round_trip(self, body_b64: str) -> None:
@@ -259,20 +262,31 @@ class TestIdempotencyRecordProperties:
                 expires_at=now + timedelta(hours=1),
             )
 
-    @given(key=key_strategy, invalid_fp=invalid_fingerprint_strategy)
-    def test_invalid_fingerprint_rejected(self, key: str, invalid_fp: str) -> None:
+    @given(key=key_strategy)
+    def test_invalid_fingerprint_rejected(self, key: str) -> None:
         """Invalid fingerprints should be rejected."""
         now = datetime.utcnow()
 
-        with pytest.raises(ValidationError):
-            IdempotencyRecord(
-                key=key,
-                fingerprint=invalid_fp,
-                state=RequestState.NEW,
-                response=None,
-                created_at=now,
-                expires_at=now + timedelta(hours=1),
-            )
+        # Use known invalid fingerprints
+        invalid_fingerprints = [
+            "",  # Empty
+            "abc",  # Too short
+            "0" * 63,  # One char too short
+            "0" * 65,  # One char too long
+            "g" * 64,  # Invalid character
+            "ABCD" * 16,  # Uppercase (should be lowercase)
+        ]
+
+        for invalid_fp in invalid_fingerprints:
+            with pytest.raises(ValidationError):
+                IdempotencyRecord(
+                    key=key,
+                    fingerprint=invalid_fp,
+                    state=RequestState.NEW,
+                    response=None,
+                    created_at=now,
+                    expires_at=now + timedelta(hours=1),
+                )
 
     @given(
         key=key_strategy,

@@ -448,14 +448,17 @@ class TestGetHeaderValueEdgeCases:
 
     @given(
         headers=st.dictionaries(
-            st.text(min_size=1, max_size=50),
+            # HTTP header names should be ASCII-only per RFC 7230
+            st.text(
+                alphabet=st.characters(min_codepoint=33, max_codepoint=126), min_size=1, max_size=50
+            ),
             st.text(min_size=0, max_size=200),
             min_size=1,
             max_size=20,
         )
     )
     def test_get_existing_header_always_works(self, headers: dict[str, str]) -> None:
-        """Getting an existing header should always work."""
+        """Getting an existing header should always work with ASCII header names."""
         # Pick a random header from the dict
         header_name = list(headers.keys())[0]
         expected_value = headers[header_name]
