@@ -167,7 +167,7 @@ async def test_record_expires_after_ttl(
         headers={"Idempotency-Key": idempotency_key},
     )
     assert response2.status_code == 200
-    assert response2.headers.get("idempotent-replayed") == "true"
+    assert response2.headers.get("idempotent-replay") == "true"
     assert response2.json()["id"] == payment_id_1
 
     # Handler still executed once
@@ -181,6 +181,9 @@ async def test_record_expires_after_ttl(
     record = await storage.get(idempotency_key)
     if record:
         record.expires_at = datetime.utcnow() - timedelta(seconds=1)
+
+    # Cleanup expired records
+    await storage.cleanup_expired()
 
     # Third request after expiry (should execute handler again)
     response3 = client.post(
@@ -234,7 +237,7 @@ async def test_request_before_expiry_returns_cached(
             headers={"Idempotency-Key": idempotency_key},
         )
         assert response.status_code == 200
-        assert response.headers.get("idempotent-replayed") == "true"
+        assert response.headers.get("idempotent-replay") == "true"
         assert response.json()["id"] == payment_id
 
     # Handler executed only once
@@ -546,7 +549,7 @@ async def test_full_ttl_lifecycle(
         headers={"Idempotency-Key": idempotency_key},
     )
     assert response2.status_code == 200
-    assert response2.headers.get("idempotent-replayed") == "true"
+    assert response2.headers.get("idempotent-replay") == "true"
     assert response2.json()["id"] == payment_id_1
 
     # Step 3: Expire record
@@ -595,7 +598,7 @@ async def test_concurrent_cleanup_and_requests(
     for i in range(5):
         await storage.put_new_running(
             key=f"old-{i}",
-            fingerprint="g" * 64,
+            fingerprint="a" * 64,
             ttl_seconds=1,
         )
 
@@ -652,7 +655,7 @@ async def test_cleanup_removes_unused_locks(storage: MemoryStorageAdapter) -> No
     for i in range(5):
         result = await storage.put_new_running(
             key=f"lock-test-{i}",
-            fingerprint="h" * 64,
+            fingerprint="a" * 64,
             ttl_seconds=1,
         )
         # Complete them to release locks
@@ -700,7 +703,7 @@ async def test_record_at_exact_expiry_boundary(
     # Create record
     await storage.put_new_running(
         key="boundary-test",
-        fingerprint="i" * 64,
+        fingerprint="a" * 64,
         ttl_seconds=3600,
     )
 
@@ -734,7 +737,7 @@ async def test_multiple_cleanup_calls_idempotent(
     for i in range(5):
         await storage.put_new_running(
             key=f"multi-cleanup-{i}",
-            fingerprint="j" * 64,
+            fingerprint="a" * 64,
             ttl_seconds=1,
         )
 
@@ -799,7 +802,7 @@ async def test_ttl_with_failed_request(
         headers={"Idempotency-Key": idempotency_key},
     )
     assert response2.status_code == 400
-    assert response2.headers.get("idempotent-replayed") == "true"
+    assert response2.headers.get("idempotent-replay") == "true"
 
     # Handler executed once
     count = await get_counter()

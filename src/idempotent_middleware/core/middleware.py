@@ -140,29 +140,29 @@ class IdempotencyMiddleware:
             # No idempotency key, process normally
             return await handler(request)
 
-        # Validate key format
-        self._validate_key(key)
-
-        # Validate request size
-        self._validate_request_size(request)
-
-        # Compute fingerprint
-        # Note: fingerprint_headers is always a list[str] after validation
-        headers_list: list[str] = (
-            self.config.fingerprint_headers
-            if isinstance(self.config.fingerprint_headers, list)
-            else [self.config.fingerprint_headers]
-        )
-        fingerprint = compute_fingerprint(
-            method=request.method,
-            path=request.path,
-            query_string=request.query_string,
-            headers=request.headers,
-            body=request.body,
-            included_headers=headers_list,
-        )
-
         try:
+            # Validate key format
+            self._validate_key(key)
+
+            # Validate request size
+            self._validate_request_size(request)
+
+            # Compute fingerprint
+            # Note: fingerprint_headers is always a list[str] after validation
+            headers_list: list[str] = (
+                self.config.fingerprint_headers
+                if isinstance(self.config.fingerprint_headers, list)
+                else [self.config.fingerprint_headers]
+            )
+            fingerprint = compute_fingerprint(
+                method=request.method,
+                path=request.path,
+                query_string=request.query_string,
+                headers=request.headers,
+                body=request.body,
+                included_headers=headers_list,
+            )
+
             # Process through state machine
             result = await process_request(
                 storage=self.storage,
@@ -262,5 +262,6 @@ class IdempotencyMiddleware:
             IdempotencyError: If request body is too large
         """
         max_size = self.config.max_body_bytes
-        if len(request.body) > max_size:
+        # 0 means unlimited
+        if max_size > 0 and len(request.body) > max_size:
             raise IdempotencyError(f"Request body exceeds maximum size of {max_size} bytes")

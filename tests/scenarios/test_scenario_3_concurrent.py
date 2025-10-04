@@ -19,9 +19,9 @@ import json
 import time
 from typing import Any
 
+import httpx
 import pytest
 from fastapi import FastAPI, Header
-from fastapi.testclient import TestClient
 from pydantic import BaseModel
 
 from idempotent_middleware.adapters.asgi import ASGIIdempotencyMiddleware
@@ -165,22 +165,22 @@ async def test_two_concurrent_requests_same_key_wait_policy(
     """
     await reset_counter()
     app = create_app(storage, wait_config)
-    client = TestClient(app)
 
     idempotency_key = "test-concurrent-2"
     payload = {"amount": 100, "currency": "USD"}
 
     # Make 2 concurrent requests
     async def make_request():
-        return client.post(
-            "/api/payments",
-            json=payload,
-            headers={"Idempotency-Key": idempotency_key},
-        )
+        async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://test") as client:
+            return await client.post(
+                "/api/payments",
+                json=payload,
+                headers={"Idempotency-Key": idempotency_key},
+            )
 
     results = await asyncio.gather(
-        asyncio.to_thread(make_request),
-        asyncio.to_thread(make_request),
+        make_request(),
+        make_request(),
     )
 
     # Both requests should succeed
@@ -198,7 +198,7 @@ async def test_two_concurrent_requests_same_key_wait_policy(
 
     # One should be original, one should be replay
     replay_headers_count = sum(
-        1 for r in results if r.headers.get("idempotent-replayed") == "true"
+        1 for r in results if r.headers.get("idempotent-replay") == "true"
     )
     assert replay_headers_count == 1
 
@@ -217,20 +217,20 @@ async def test_ten_concurrent_requests_same_key_wait_policy(
     """
     await reset_counter()
     app = create_app(storage, wait_config)
-    client = TestClient(app)
 
     idempotency_key = "test-concurrent-10"
     payload = {"amount": 250, "currency": "USD"}
 
     # Make 10 concurrent requests
     async def make_request():
-        return client.post(
-            "/api/payments",
-            json=payload,
-            headers={"Idempotency-Key": idempotency_key},
-        )
+        async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://test") as client:
+            return await client.post(
+                "/api/payments",
+                json=payload,
+                headers={"Idempotency-Key": idempotency_key},
+            )
 
-    tasks = [asyncio.to_thread(make_request) for _ in range(10)]
+    tasks = [make_request() for _ in range(10)]
     results = await asyncio.gather(*tasks)
 
     # All requests should succeed
@@ -246,7 +246,7 @@ async def test_ten_concurrent_requests_same_key_wait_policy(
 
     # Exactly 9 should be replays, 1 should be original
     replay_count = sum(
-        1 for r in results if r.headers.get("idempotent-replayed") == "true"
+        1 for r in results if r.headers.get("idempotent-replay") == "true"
     )
     assert replay_count == 9
 
@@ -265,20 +265,20 @@ async def test_hundred_concurrent_requests_same_key_wait_policy(
     """
     await reset_counter()
     app = create_app(storage, wait_config)
-    client = TestClient(app)
 
     idempotency_key = "test-concurrent-100"
     payload = {"amount": 500, "currency": "USD"}
 
     # Make 100 concurrent requests
     async def make_request():
-        return client.post(
-            "/api/fast-payment",
-            json=payload,
-            headers={"Idempotency-Key": idempotency_key},
-        )
+        async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://test") as client:
+            return await client.post(
+                "/api/fast-payment",
+                json=payload,
+                headers={"Idempotency-Key": idempotency_key},
+            )
 
-    tasks = [asyncio.to_thread(make_request) for _ in range(100)]
+    tasks = [make_request() for _ in range(100)]
     results = await asyncio.gather(*tasks)
 
     # All requests should succeed
@@ -294,7 +294,7 @@ async def test_hundred_concurrent_requests_same_key_wait_policy(
 
     # Exactly 99 should be replays
     replay_count = sum(
-        1 for r in results if r.headers.get("idempotent-replayed") == "true"
+        1 for r in results if r.headers.get("idempotent-replay") == "true"
     )
     assert replay_count == 99
 
@@ -318,22 +318,22 @@ async def test_two_concurrent_requests_same_key_no_wait_policy(
     """
     await reset_counter()
     app = create_app(storage, no_wait_config)
-    client = TestClient(app)
 
     idempotency_key = "test-nowait-2"
     payload = {"amount": 100, "currency": "USD"}
 
     # Make 2 concurrent requests
     async def make_request():
-        return client.post(
-            "/api/payments",
-            json=payload,
-            headers={"Idempotency-Key": idempotency_key},
-        )
+        async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://test") as client:
+            return await client.post(
+                "/api/payments",
+                json=payload,
+                headers={"Idempotency-Key": idempotency_key},
+            )
 
     results = await asyncio.gather(
-        asyncio.to_thread(make_request),
-        asyncio.to_thread(make_request),
+        make_request(),
+        make_request(),
     )
 
     # One should succeed (200), one should get 409
@@ -362,20 +362,20 @@ async def test_ten_concurrent_requests_same_key_no_wait_policy(
     """
     await reset_counter()
     app = create_app(storage, no_wait_config)
-    client = TestClient(app)
 
     idempotency_key = "test-nowait-10"
     payload = {"amount": 250, "currency": "USD"}
 
     # Make 10 concurrent requests
     async def make_request():
-        return client.post(
-            "/api/payments",
-            json=payload,
-            headers={"Idempotency-Key": idempotency_key},
-        )
+        async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://test") as client:
+            return await client.post(
+                "/api/payments",
+                json=payload,
+                headers={"Idempotency-Key": idempotency_key},
+            )
 
-    tasks = [asyncio.to_thread(make_request) for _ in range(10)]
+    tasks = [make_request() for _ in range(10)]
     results = await asyncio.gather(*tasks)
 
     # Count status codes
@@ -404,27 +404,28 @@ async def test_no_wait_second_request_after_completion(
     """
     await reset_counter()
     app = create_app(storage, no_wait_config)
-    client = TestClient(app)
 
     idempotency_key = "test-nowait-replay"
     payload = {"amount": 100, "currency": "USD"}
 
     # First request
-    response1 = client.post(
-        "/api/fast-payment",
-        json=payload,
-        headers={"Idempotency-Key": idempotency_key},
-    )
+    async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://test") as client:
+        response1 = await client.post(
+            "/api/fast-payment",
+            json=payload,
+            headers={"Idempotency-Key": idempotency_key},
+        )
     assert response1.status_code == 200
 
     # Second request after completion
-    response2 = client.post(
-        "/api/fast-payment",
-        json=payload,
-        headers={"Idempotency-Key": idempotency_key},
-    )
+    async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://test") as client:
+        response2 = await client.post(
+            "/api/fast-payment",
+            json=payload,
+            headers={"Idempotency-Key": idempotency_key},
+        )
     assert response2.status_code == 200
-    assert response2.headers.get("idempotent-replayed") == "true"
+    assert response2.headers.get("idempotent-replay") == "true"
     assert response1.json() == response2.json()
 
     # Handler should execute exactly once
@@ -450,19 +451,19 @@ async def test_concurrent_requests_different_keys_all_execute(
     """
     await reset_counter()
     app = create_app(storage, wait_config)
-    client = TestClient(app)
 
     payload = {"amount": 100, "currency": "USD"}
 
     # Make 10 concurrent requests with different keys
     async def make_request(key: str):
-        return client.post(
-            "/api/payments",
-            json=payload,
-            headers={"Idempotency-Key": key},
-        )
+        async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://test") as client:
+            return await client.post(
+                "/api/payments",
+                json=payload,
+                headers={"Idempotency-Key": key},
+            )
 
-    tasks = [asyncio.to_thread(make_request, f"key-{i}") for i in range(10)]
+    tasks = [make_request(f"key-{i}") for i in range(10)]
     results = await asyncio.gather(*tasks)
 
     # All requests should succeed
@@ -474,7 +475,7 @@ async def test_concurrent_requests_different_keys_all_execute(
 
     # None should be replays
     replay_count = sum(
-        1 for r in results if r.headers.get("idempotent-replayed") == "true"
+        1 for r in results if r.headers.get("idempotent-replay") == "true"
     )
     assert replay_count == 0
 
@@ -492,23 +493,23 @@ async def test_mixed_concurrent_same_and_different_keys(
     """
     await reset_counter()
     app = create_app(storage, wait_config)
-    client = TestClient(app)
 
     payload = {"amount": 100, "currency": "USD"}
 
     # Make 20 requests: 10 with key-A, 10 with key-B
     async def make_request(key: str):
-        return client.post(
-            "/api/payments",
-            json=payload,
-            headers={"Idempotency-Key": key},
-        )
+        async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://test") as client:
+            return await client.post(
+                "/api/payments",
+                json=payload,
+                headers={"Idempotency-Key": key},
+            )
 
     tasks = []
     for _ in range(10):
-        tasks.append(asyncio.to_thread(make_request, "key-A"))
+        tasks.append(make_request("key-A"))
     for _ in range(10):
-        tasks.append(asyncio.to_thread(make_request, "key-B"))
+        tasks.append(make_request("key-B"))
 
     results = await asyncio.gather(*tasks)
 
@@ -521,7 +522,7 @@ async def test_mixed_concurrent_same_and_different_keys(
 
     # 18 should be replays (9 for key-A, 9 for key-B)
     replay_count = sum(
-        1 for r in results if r.headers.get("idempotent-replayed") == "true"
+        1 for r in results if r.headers.get("idempotent-replay") == "true"
     )
     assert replay_count == 18
 
@@ -544,20 +545,20 @@ async def test_concurrent_requests_handler_fails_all_see_error(
     """
     await reset_counter()
     app = create_app(storage, wait_config)
-    client = TestClient(app)
 
     idempotency_key = "test-error-concurrent"
     payload = {"amount": 100, "currency": "USD"}
 
     # Make 5 concurrent requests to error endpoint
     async def make_request():
-        return client.post(
-            "/api/error-payment",
-            json=payload,
-            headers={"Idempotency-Key": idempotency_key},
-        )
+        async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://test") as client:
+            return await client.post(
+                "/api/error-payment",
+                json=payload,
+                headers={"Idempotency-Key": idempotency_key},
+            )
 
-    tasks = [asyncio.to_thread(make_request) for _ in range(5)]
+    tasks = [make_request() for _ in range(5)]
     results = await asyncio.gather(*tasks)
 
     # All requests should get 400 error
@@ -573,7 +574,7 @@ async def test_concurrent_requests_handler_fails_all_see_error(
 
     # 4 should be replays
     replay_count = sum(
-        1 for r in results if r.headers.get("idempotent-replayed") == "true"
+        1 for r in results if r.headers.get("idempotent-replay") == "true"
     )
     assert replay_count == 4
 
@@ -597,27 +598,27 @@ async def test_mixed_arrival_some_during_running_some_after_completed(
     """
     await reset_counter()
     app = create_app(storage, wait_config)
-    client = TestClient(app)
 
     idempotency_key = "test-mixed-arrival"
     payload = {"amount": 500, "currency": "USD"}
 
     async def make_request():
-        return client.post(
-            "/api/payments",
-            json=payload,
-            headers={"Idempotency-Key": idempotency_key},
-        )
+        async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://test") as client:
+            return await client.post(
+                "/api/payments",
+                json=payload,
+                headers={"Idempotency-Key": idempotency_key},
+            )
 
     # First batch: 5 concurrent requests
-    batch1_tasks = [asyncio.to_thread(make_request) for _ in range(5)]
+    batch1_tasks = [make_request() for _ in range(5)]
     batch1_results = await asyncio.gather(*batch1_tasks)
 
     # Wait a bit to ensure completion
     await asyncio.sleep(0.5)
 
     # Second batch: 5 more requests (should hit COMPLETED state)
-    batch2_tasks = [asyncio.to_thread(make_request) for _ in range(5)]
+    batch2_tasks = [make_request() for _ in range(5)]
     batch2_results = await asyncio.gather(*batch2_tasks)
 
     all_results = batch1_results + batch2_results
@@ -635,7 +636,7 @@ async def test_mixed_arrival_some_during_running_some_after_completed(
 
     # 9 should be replays
     replay_count = sum(
-        1 for r in all_results if r.headers.get("idempotent-replayed") == "true"
+        1 for r in all_results if r.headers.get("idempotent-replay") == "true"
     )
     assert replay_count == 9
 
@@ -653,7 +654,6 @@ async def test_staggered_arrival_times(
     """
     await reset_counter()
     app = create_app(storage, wait_config)
-    client = TestClient(app)
 
     idempotency_key = "test-staggered"
     payload = {"amount": 300, "currency": "USD"}
@@ -661,35 +661,32 @@ async def test_staggered_arrival_times(
     results = []
 
     # First request
-    result1 = await asyncio.to_thread(
-        lambda: client.post(
+    async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://test") as client:
+        result1 = await client.post(
             "/api/slow-payment",
             json=payload,
             headers={"Idempotency-Key": idempotency_key},
         )
-    )
     results.append(result1)
 
     # Second request after 0.2s (during execution)
     await asyncio.sleep(0.2)
-    result2 = await asyncio.to_thread(
-        lambda: client.post(
+    async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://test") as client:
+        result2 = await client.post(
             "/api/slow-payment",
             json=payload,
             headers={"Idempotency-Key": idempotency_key},
         )
-    )
     results.append(result2)
 
     # Third request after another 0.5s (might be after completion)
     await asyncio.sleep(0.5)
-    result3 = await asyncio.to_thread(
-        lambda: client.post(
+    async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://test") as client:
+        result3 = await client.post(
             "/api/slow-payment",
             json=payload,
             headers={"Idempotency-Key": idempotency_key},
         )
-    )
     results.append(result3)
 
     # All should succeed
@@ -705,7 +702,7 @@ async def test_staggered_arrival_times(
 
     # At least 2 should be replays
     replay_count = sum(
-        1 for r in results if r.headers.get("idempotent-replayed") == "true"
+        1 for r in results if r.headers.get("idempotent-replay") == "true"
     )
     assert replay_count >= 2
 
@@ -728,17 +725,17 @@ async def test_lock_released_after_completion(
     """
     await reset_counter()
     app = create_app(storage, wait_config)
-    client = TestClient(app)
 
     idempotency_key = "test-lock-release"
     payload = {"amount": 100, "currency": "USD"}
 
     # First request
-    response1 = client.post(
-        "/api/fast-payment",
-        json=payload,
-        headers={"Idempotency-Key": idempotency_key},
-    )
+    async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://test") as client:
+        response1 = await client.post(
+            "/api/fast-payment",
+            json=payload,
+            headers={"Idempotency-Key": idempotency_key},
+        )
     assert response1.status_code == 200
 
     # Verify lock is released (by checking storage internals)
@@ -747,13 +744,14 @@ async def test_lock_released_after_completion(
     assert not lock.locked()
 
     # Second request should not block
-    response2 = client.post(
-        "/api/fast-payment",
-        json=payload,
-        headers={"Idempotency-Key": idempotency_key},
-    )
+    async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://test") as client:
+        response2 = await client.post(
+            "/api/fast-payment",
+            json=payload,
+            headers={"Idempotency-Key": idempotency_key},
+        )
     assert response2.status_code == 200
-    assert response2.headers.get("idempotent-replayed") == "true"
+    assert response2.headers.get("idempotent-replay") == "true"
 
 
 @pytest.mark.asyncio
@@ -768,17 +766,17 @@ async def test_lock_released_after_failure(
     """
     await reset_counter()
     app = create_app(storage, wait_config)
-    client = TestClient(app)
 
     idempotency_key = "test-lock-release-error"
     payload = {"amount": 100, "currency": "USD"}
 
     # First request (will fail)
-    response1 = client.post(
-        "/api/error-payment",
-        json=payload,
-        headers={"Idempotency-Key": idempotency_key},
-    )
+    async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://test") as client:
+        response1 = await client.post(
+            "/api/error-payment",
+            json=payload,
+            headers={"Idempotency-Key": idempotency_key},
+        )
     assert response1.status_code == 400
 
     # Verify lock is released
@@ -787,13 +785,14 @@ async def test_lock_released_after_failure(
     assert not lock.locked()
 
     # Second request should replay error
-    response2 = client.post(
-        "/api/error-payment",
-        json=payload,
-        headers={"Idempotency-Key": idempotency_key},
-    )
+    async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://test") as client:
+        response2 = await client.post(
+            "/api/error-payment",
+            json=payload,
+            headers={"Idempotency-Key": idempotency_key},
+        )
     assert response2.status_code == 400
-    assert response2.headers.get("idempotent-replayed") == "true"
+    assert response2.headers.get("idempotent-replay") == "true"
 
 
 # ============================================================================
@@ -815,20 +814,20 @@ async def test_race_condition_at_new_to_running_transition(
     """
     await reset_counter()
     app = create_app(storage, wait_config)
-    client = TestClient(app)
 
     idempotency_key = "test-race-condition"
     payload = {"amount": 777, "currency": "USD"}
 
     # Launch many concurrent requests to maximize race condition likelihood
     async def make_request():
-        return client.post(
-            "/api/payments",
-            json=payload,
-            headers={"Idempotency-Key": idempotency_key},
-        )
+        async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://test") as client:
+            return await client.post(
+                "/api/payments",
+                json=payload,
+                headers={"Idempotency-Key": idempotency_key},
+            )
 
-    tasks = [asyncio.to_thread(make_request) for _ in range(20)]
+    tasks = [make_request() for _ in range(20)]
     results = await asyncio.gather(*tasks)
 
     # All should succeed
@@ -856,20 +855,20 @@ async def test_race_condition_with_no_wait_policy(
     """
     await reset_counter()
     app = create_app(storage, no_wait_config)
-    client = TestClient(app)
 
     idempotency_key = "test-race-nowait"
     payload = {"amount": 888, "currency": "USD"}
 
     # Launch many concurrent requests
     async def make_request():
-        return client.post(
-            "/api/payments",
-            json=payload,
-            headers={"Idempotency-Key": idempotency_key},
-        )
+        async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://test") as client:
+            return await client.post(
+                "/api/payments",
+                json=payload,
+                headers={"Idempotency-Key": idempotency_key},
+            )
 
-    tasks = [asyncio.to_thread(make_request) for _ in range(20)]
+    tasks = [make_request() for _ in range(20)]
     results = await asyncio.gather(*tasks)
 
     # Count outcomes
