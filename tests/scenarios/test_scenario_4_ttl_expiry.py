@@ -18,7 +18,7 @@ import asyncio
 import base64
 import json
 import time
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 
 import pytest
 from fastapi import FastAPI, Header
@@ -180,7 +180,7 @@ async def test_record_expires_after_ttl(
     # Manually expire the record (simulate time passing)
     record = await storage.get(idempotency_key)
     if record:
-        record.expires_at = datetime.utcnow() - timedelta(seconds=1)
+        record.expires_at = datetime.now(UTC) - timedelta(seconds=1)
 
     # Cleanup expired records
     await storage.cleanup_expired()
@@ -279,7 +279,7 @@ async def test_cleanup_removes_expired_records(storage: MemoryStorageAdapter) ->
     for i in range(5):
         record = await storage.get(f"expired-{i}")
         if record:
-            record.expires_at = datetime.utcnow() - timedelta(seconds=1)
+            record.expires_at = datetime.now(UTC) - timedelta(seconds=1)
 
     # Run cleanup
     removed_count = await storage.cleanup_expired()
@@ -328,7 +328,7 @@ async def test_cleanup_batch_removes_multiple_expired(
     for i in range(20):
         record = await storage.get(f"batch-expired-{i}")
         if record:
-            record.expires_at = datetime.utcnow() - timedelta(seconds=1)
+            record.expires_at = datetime.now(UTC) - timedelta(seconds=1)
 
     # Run cleanup
     removed_count = await storage.cleanup_expired()
@@ -365,7 +365,7 @@ async def test_storage_space_reclaimed_after_cleanup(
     for i in range(10):
         record = await storage.get(f"space-test-{i}")
         if record:
-            record.expires_at = datetime.utcnow() - timedelta(seconds=1)
+            record.expires_at = datetime.now(UTC) - timedelta(seconds=1)
 
     # Cleanup
     await storage.cleanup_expired()
@@ -391,7 +391,7 @@ async def test_ttl_countdown_created_at_vs_expires_at(
     - Timestamps are accurate
     """
     ttl_seconds = 3600
-    before = datetime.utcnow()
+    before = datetime.now(UTC)
 
     result = await storage.put_new_running(
         key="test-ttl-countdown",
@@ -399,7 +399,7 @@ async def test_ttl_countdown_created_at_vs_expires_at(
         ttl_seconds=ttl_seconds,
     )
 
-    after = datetime.utcnow()
+    after = datetime.now(UTC)
 
     record = await storage.get("test-ttl-countdown")
     assert record is not None
@@ -412,7 +412,7 @@ async def test_ttl_countdown_created_at_vs_expires_at(
     assert record.expires_at == expected_expires
 
     # expires_at should be approximately ttl_seconds in the future
-    time_until_expiry = (record.expires_at - datetime.utcnow()).total_seconds()
+    time_until_expiry = (record.expires_at - datetime.now(UTC)).total_seconds()
     assert 3590 <= time_until_expiry <= 3610  # Allow 10 second tolerance
 
 
@@ -480,12 +480,12 @@ async def test_expired_record_not_replayed(
     # Manually expire the record
     record = await storage.get(idempotency_key)
     assert record is not None
-    record.expires_at = datetime.utcnow() - timedelta(seconds=1)
+    record.expires_at = datetime.now(UTC) - timedelta(seconds=1)
 
     # Record still exists but is expired
     expired_record = await storage.get(idempotency_key)
     assert expired_record is not None
-    assert expired_record.expires_at < datetime.utcnow()
+    assert expired_record.expires_at < datetime.now(UTC)
 
     # Second request should NOT replay (record is expired)
     # Note: Middleware doesn't automatically check expiry on get(),
@@ -555,7 +555,7 @@ async def test_full_ttl_lifecycle(
     # Step 3: Expire record
     record = await storage.get(idempotency_key)
     assert record is not None
-    record.expires_at = datetime.utcnow() - timedelta(seconds=1)
+    record.expires_at = datetime.now(UTC) - timedelta(seconds=1)
 
     # Step 4: Cleanup
     removed_count = await storage.cleanup_expired()
@@ -606,7 +606,7 @@ async def test_concurrent_cleanup_and_requests(
     for i in range(5):
         record = await storage.get(f"old-{i}")
         if record:
-            record.expires_at = datetime.utcnow() - timedelta(seconds=1)
+            record.expires_at = datetime.now(UTC) - timedelta(seconds=1)
 
     # Make new active requests
     async def make_request(key: str):
@@ -680,7 +680,7 @@ async def test_cleanup_removes_unused_locks(storage: MemoryStorageAdapter) -> No
     for i in range(5):
         record = await storage.get(f"lock-test-{i}")
         if record:
-            record.expires_at = datetime.utcnow() - timedelta(seconds=1)
+            record.expires_at = datetime.now(UTC) - timedelta(seconds=1)
 
     # Cleanup
     await storage.cleanup_expired()
@@ -711,7 +711,7 @@ async def test_record_at_exact_expiry_boundary(
     assert record is not None
 
     # Set expires_at to exact current time
-    record.expires_at = datetime.utcnow()
+    record.expires_at = datetime.now(UTC)
 
     # Small sleep to ensure time has passed
     await asyncio.sleep(0.01)
@@ -745,7 +745,7 @@ async def test_multiple_cleanup_calls_idempotent(
     for i in range(5):
         record = await storage.get(f"multi-cleanup-{i}")
         if record:
-            record.expires_at = datetime.utcnow() - timedelta(seconds=1)
+            record.expires_at = datetime.now(UTC) - timedelta(seconds=1)
 
     # First cleanup
     count1 = await storage.cleanup_expired()
@@ -811,7 +811,7 @@ async def test_ttl_with_failed_request(
     # Expire and cleanup
     record = await storage.get(idempotency_key)
     if record:
-        record.expires_at = datetime.utcnow() - timedelta(seconds=1)
+        record.expires_at = datetime.now(UTC) - timedelta(seconds=1)
     await storage.cleanup_expired()
 
     # Third request after expiry (executes again)

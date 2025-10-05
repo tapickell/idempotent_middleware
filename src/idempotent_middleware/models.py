@@ -7,7 +7,7 @@ and lease management results.
 Examples:
     Creating an idempotency record::
 
-        from datetime import datetime, timedelta
+        from datetime import UTC, datetime, timedelta
         from idempotent_middleware.models import (
             IdempotencyRecord,
             RequestState,
@@ -19,8 +19,8 @@ Examples:
             fingerprint="a" * 64,
             state=RequestState.NEW,
             response=None,
-            created_at=datetime.utcnow(),
-            expires_at=datetime.utcnow() + timedelta(hours=24),
+            created_at=datetime.now(UTC),
+            expires_at=datetime.now(UTC) + timedelta(hours=24),
         )
 
     Storing a completed response::
@@ -37,7 +37,7 @@ Examples:
 """
 
 import base64
-from datetime import datetime
+from datetime import UTC, datetime
 from enum import Enum
 from typing import Any
 from uuid import UUID
@@ -163,7 +163,7 @@ class IdempotencyRecord(BaseModel):
     Examples:
         Creating a new record::
 
-            from datetime import datetime, timedelta
+            from datetime import UTC, datetime, timedelta
             import uuid
 
             record = IdempotencyRecord(
@@ -171,8 +171,8 @@ class IdempotencyRecord(BaseModel):
                 fingerprint="a" * 64,
                 state=RequestState.NEW,
                 response=None,
-                created_at=datetime.utcnow(),
-                expires_at=datetime.utcnow() + timedelta(hours=24),
+                created_at=datetime.now(UTC),
+                expires_at=datetime.now(UTC) + timedelta(hours=24),
                 lease_token=str(uuid.uuid4()),
                 trace_id="trace-abc123",
             )
@@ -328,8 +328,8 @@ class LeaseResult(BaseModel):
                     fingerprint="a" * 64,
                     state=RequestState.RUNNING,
                     response=None,
-                    created_at=datetime.utcnow(),
-                    expires_at=datetime.utcnow() + timedelta(hours=24),
+                    created_at=datetime.now(UTC),
+                    expires_at=datetime.now(UTC) + timedelta(hours=24),
                     lease_token="other-process-uuid",
                 ),
             )
@@ -348,8 +348,8 @@ class LeaseResult(BaseModel):
                         headers={"content-type": "application/json"},
                         body_b64="eyJyZXN1bHQiOiAic3VjY2VzcyJ9",
                     ),
-                    created_at=datetime.utcnow(),
-                    expires_at=datetime.utcnow() + timedelta(hours=24),
+                    created_at=datetime.now(UTC),
+                    expires_at=datetime.now(UTC) + timedelta(hours=24),
                 ),
             )
     """

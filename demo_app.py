@@ -6,7 +6,7 @@ Then test with: bash test_demo.sh
 """
 
 import time
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Optional
 
 import uvicorn
@@ -90,7 +90,7 @@ async def get_status():
     """Health check endpoint - safe method bypasses idempotency middleware."""
     return {
         "status": "ok",
-        "timestamp": datetime.utcnow().isoformat(),
+        "timestamp": datetime.now(UTC).isoformat(),
         "message": "Safe methods bypass idempotency middleware",
     }
 
@@ -116,7 +116,7 @@ async def create_payment(
         status="success",
         amount=payment.amount,
         currency=payment.currency,
-        created_at=datetime.utcnow().isoformat(),
+        created_at=datetime.now(UTC).isoformat(),
     )
 
 
@@ -143,7 +143,7 @@ async def create_order(
         product_id=order.product_id,
         quantity=order.quantity,
         total=total,
-        created_at=datetime.utcnow().isoformat(),
+        created_at=datetime.now(UTC).isoformat(),
     )
 
 
@@ -164,7 +164,7 @@ async def update_order(
         "status": "updated",
         "product_id": order.product_id,
         "quantity": order.quantity,
-        "updated_at": datetime.utcnow().isoformat(),
+        "updated_at": datetime.now(UTC).isoformat(),
     }
 
 
@@ -182,7 +182,7 @@ async def cancel_order(
     return {
         "order_id": order_id,
         "status": "cancelled",
-        "cancelled_at": datetime.utcnow().isoformat(),
+        "cancelled_at": datetime.now(UTC).isoformat(),
     }
 
 

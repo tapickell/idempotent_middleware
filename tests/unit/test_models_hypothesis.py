@@ -5,7 +5,7 @@ and behavior across diverse inputs.
 """
 
 import base64
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from uuid import uuid4
 
 import pytest
@@ -250,7 +250,7 @@ class TestIdempotencyRecordProperties:
     @given(invalid_key=invalid_key_strategy, fingerprint=fingerprint_strategy)
     def test_invalid_key_rejected(self, invalid_key: str, fingerprint: str) -> None:
         """Invalid keys should be rejected."""
-        now = datetime.utcnow()
+        now = datetime.now(UTC)
 
         with pytest.raises(ValidationError):
             IdempotencyRecord(
@@ -265,7 +265,7 @@ class TestIdempotencyRecordProperties:
     @given(key=key_strategy)
     def test_invalid_fingerprint_rejected(self, key: str) -> None:
         """Invalid fingerprints should be rejected."""
-        now = datetime.utcnow()
+        now = datetime.now(UTC)
 
         # Use known invalid fingerprints
         invalid_fingerprints = [
@@ -336,7 +336,7 @@ class TestIdempotencyRecordProperties:
         uuid_str: str,
     ) -> None:
         """Valid UUID lease tokens should be accepted."""
-        now = datetime.utcnow()
+        now = datetime.now(UTC)
 
         record = IdempotencyRecord(
             key=key,
@@ -362,7 +362,7 @@ class TestIdempotencyRecordProperties:
         invalid_uuid: str,
     ) -> None:
         """Invalid UUID lease tokens should be rejected."""
-        now = datetime.utcnow()
+        now = datetime.now(UTC)
 
         with pytest.raises(ValidationError) as exc_info:
             IdempotencyRecord(
@@ -389,7 +389,7 @@ class TestIdempotencyRecordProperties:
         exec_time: int,
     ) -> None:
         """Execution time must be non-negative."""
-        now = datetime.utcnow()
+        now = datetime.now(UTC)
 
         record = IdempotencyRecord(
             key=key,
@@ -415,7 +415,7 @@ class TestIdempotencyRecordProperties:
         negative_time: int,
     ) -> None:
         """Negative execution time should be rejected."""
-        now = datetime.utcnow()
+        now = datetime.now(UTC)
 
         with pytest.raises(ValidationError):
             IdempotencyRecord(
@@ -451,7 +451,7 @@ class TestLeaseResultProperties:
     )
     def test_failed_lease_result(self, key: str, fingerprint: str) -> None:
         """Failed lease result should have existing record and no token."""
-        now = datetime.utcnow()
+        now = datetime.now(UTC)
 
         existing = IdempotencyRecord(
             key=key,
@@ -503,7 +503,7 @@ class TestLeaseResultProperties:
         fingerprint: str,
     ) -> None:
         """Success=False requires existing_record to be present."""
-        now = datetime.utcnow()
+        now = datetime.now(UTC)
 
         existing = IdempotencyRecord(
             key=key,
@@ -544,7 +544,7 @@ class TestLeaseResultProperties:
         fingerprint: str,
     ) -> None:
         """Success=True cannot have existing_record."""
-        now = datetime.utcnow()
+        now = datetime.now(UTC)
 
         existing = IdempotencyRecord(
             key=key,
@@ -567,7 +567,7 @@ class TestLeaseResultProperties:
     @given(uuid_str=uuid_strategy)
     def test_failure_cannot_have_lease_token(self, uuid_str: str) -> None:
         """Success=False cannot have lease_token."""
-        now = datetime.utcnow()
+        now = datetime.now(UTC)
 
         existing = IdempotencyRecord(
             key="test-key",
@@ -604,7 +604,7 @@ class TestRequestStateEnum:
     @given(state=st.sampled_from(list(RequestState)))
     def test_state_can_be_used_in_model(self, state: RequestState) -> None:
         """Any RequestState should work in a model."""
-        now = datetime.utcnow()
+        now = datetime.now(UTC)
 
         record = IdempotencyRecord(
             key="test-key",

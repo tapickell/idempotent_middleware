@@ -12,7 +12,7 @@ This test suite covers:
 import asyncio
 import base64
 import uuid
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 
 import pytest
 
@@ -90,13 +90,13 @@ async def test_put_new_running_creates_record(adapter):
 @pytest.mark.asyncio
 async def test_put_new_running_sets_correct_expiry(adapter):
     """Test that put_new_running() sets correct expires_at timestamp."""
-    before = datetime.utcnow()
+    before = datetime.now(UTC)
     await adapter.put_new_running(
         key="test-key",
         fingerprint="a" * 64,
         ttl_seconds=3600,
     )
-    after = datetime.utcnow()
+    after = datetime.now(UTC)
 
     record = await adapter.get("test-key")
     assert record is not None
@@ -424,7 +424,7 @@ async def test_cleanup_removes_expired_records(adapter):
 
     # Manually adjust expired record's expires_at to past
     expired_record = adapter._store["expired-key"]
-    expired_record.expires_at = datetime.utcnow() - timedelta(seconds=1)
+    expired_record.expires_at = datetime.now(UTC) - timedelta(seconds=1)
 
     # Run cleanup
     count = await adapter.cleanup_expired()
@@ -452,7 +452,7 @@ async def test_cleanup_removes_unused_locks(adapter, sample_response):
 
     # Manually expire the record
     record = adapter._store["test-key"]
-    record.expires_at = datetime.utcnow() - timedelta(seconds=1)
+    record.expires_at = datetime.now(UTC) - timedelta(seconds=1)
 
     # Verify lock exists but is not held
     assert "test-key" in adapter._locks
@@ -477,7 +477,7 @@ async def test_cleanup_does_not_remove_held_locks(adapter):
 
     # Manually expire the record
     record = adapter._store["test-key"]
-    record.expires_at = datetime.utcnow() - timedelta(seconds=1)
+    record.expires_at = datetime.now(UTC) - timedelta(seconds=1)
 
     # Verify lock is held
     assert "test-key" in adapter._locks
@@ -506,7 +506,7 @@ async def test_cleanup_returns_correct_count(adapter):
     # Manually expire them all
     for i in range(5):
         record = adapter._store[f"expired-{i}"]
-        record.expires_at = datetime.utcnow() - timedelta(seconds=1)
+        record.expires_at = datetime.now(UTC) - timedelta(seconds=1)
 
     # Create non-expired record
     await adapter.put_new_running(
@@ -636,7 +636,7 @@ async def test_concurrent_cleanup_is_safe(adapter):
     # Manually expire them
     for i in range(10):
         record = adapter._store[f"test-{i}"]
-        record.expires_at = datetime.utcnow() - timedelta(seconds=1)
+        record.expires_at = datetime.now(UTC) - timedelta(seconds=1)
 
     # Run multiple concurrent cleanups
     tasks = [adapter.cleanup_expired() for _ in range(5)]
@@ -667,7 +667,7 @@ async def test_get_after_cleanup(adapter, sample_response):
 
     # Manually expire it
     record = adapter._store["test-key"]
-    record.expires_at = datetime.utcnow() - timedelta(seconds=1)
+    record.expires_at = datetime.now(UTC) - timedelta(seconds=1)
 
     # Clean up
     await adapter.cleanup_expired()

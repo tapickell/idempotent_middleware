@@ -6,7 +6,7 @@ comprehensive concurrency and race condition tests.
 
 import asyncio
 import base64
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from uuid import uuid4
 
 import pytest
@@ -379,7 +379,7 @@ class TestMemoryStorageConcurrency:
             # Manually set expiry to past
             record = await adapter.get(f"expired-{i}")
             if record:
-                record.expires_at = datetime.utcnow() - timedelta(hours=1)
+                record.expires_at = datetime.now(UTC) - timedelta(hours=1)
 
         # Create some active records
         active_tasks = [adapter.put_new_running(f"active-{i}", "b" * 64, 3600) for i in range(5)]
@@ -492,7 +492,7 @@ class TestMemoryStorageStressTests:
             if i % 2 == 0:
                 record = await adapter.get(f"key-{i}")
                 if record:
-                    record.expires_at = datetime.utcnow() - timedelta(hours=1)
+                    record.expires_at = datetime.now(UTC) - timedelta(hours=1)
 
         # Cleanup should handle many records efficiently
         count = await adapter.cleanup_expired()
@@ -521,7 +521,7 @@ class TestMemoryStorageStressTests:
             # Manually expire
             record = await adapter.get(key)
             if record:
-                record.expires_at = datetime.utcnow() - timedelta(hours=1)
+                record.expires_at = datetime.now(UTC) - timedelta(hours=1)
 
         # Cleanup should remove both records and locks
         count = await adapter.cleanup_expired()

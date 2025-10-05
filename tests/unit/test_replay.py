@@ -1,7 +1,7 @@
 """Unit tests for response replay logic."""
 
 import base64
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 
 import pytest
 
@@ -27,8 +27,8 @@ def test_replay_response_basic() -> None:
             headers={"content-type": "application/json"},
             body_b64=body_b64,
         ),
-        created_at=datetime.utcnow(),
-        expires_at=datetime.utcnow() + timedelta(hours=1),
+        created_at=datetime.now(UTC),
+        expires_at=datetime.now(UTC) + timedelta(hours=1),
     )
 
     response = replay_response(record, "test-key")
@@ -57,8 +57,8 @@ def test_replay_response_filters_volatile_headers() -> None:
             },
             body_b64=base64.b64encode(b"test").decode("utf-8"),
         ),
-        created_at=datetime.utcnow(),
-        expires_at=datetime.utcnow() + timedelta(hours=1),
+        created_at=datetime.now(UTC),
+        expires_at=datetime.now(UTC) + timedelta(hours=1),
     )
 
     response = replay_response(record, "test-key")
@@ -76,8 +76,8 @@ def test_replay_response_no_stored_response() -> None:
         fingerprint="c" * 64,
         state=RequestState.RUNNING,
         response=None,  # No stored response
-        created_at=datetime.utcnow(),
-        expires_at=datetime.utcnow() + timedelta(hours=1),
+        created_at=datetime.now(UTC),
+        expires_at=datetime.now(UTC) + timedelta(hours=1),
     )
 
     with pytest.raises(ValueError, match="has no stored response"):
@@ -108,8 +108,8 @@ def test_replay_response_empty_body() -> None:
             headers={},
             body_b64=base64.b64encode(b"").decode("utf-8"),
         ),
-        created_at=datetime.utcnow(),
-        expires_at=datetime.utcnow() + timedelta(hours=1),
+        created_at=datetime.now(UTC),
+        expires_at=datetime.now(UTC) + timedelta(hours=1),
     )
 
     response = replay_response(record, "test-key")
@@ -132,8 +132,8 @@ def test_replay_response_error_status() -> None:
             headers={"content-type": "application/json"},
             body_b64=body_b64,
         ),
-        created_at=datetime.utcnow(),
-        expires_at=datetime.utcnow() + timedelta(hours=1),
+        created_at=datetime.now(UTC),
+        expires_at=datetime.now(UTC) + timedelta(hours=1),
     )
 
     response = replay_response(record, "test-key")

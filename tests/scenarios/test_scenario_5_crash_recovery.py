@@ -22,7 +22,7 @@ Key behaviors tested:
 """
 
 import asyncio
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta, timezone
 
 import pytest
 
@@ -157,7 +157,7 @@ class TestLeaseExpiryAndRetry:
         4. New request can acquire lease and execute
         """
         fingerprint = "d" * 64
-        now = datetime.utcnow()
+        now = datetime.now(UTC)
 
         # Manually create a RUNNING record with already-expired time
         record = IdempotencyRecord(
@@ -192,7 +192,7 @@ class TestLeaseExpiryAndRetry:
         """
         old_token = "old-token-12345"
         fingerprint = "e" * 64
-        now = datetime.utcnow()
+        now = datetime.now(UTC)
 
         # Create expired record
         record = IdempotencyRecord(
@@ -225,7 +225,7 @@ class TestLeaseExpiryAndRetry:
         the request after the record has been cleaned up.
         """
         fingerprint = "f" * 64
-        now = datetime.utcnow()
+        now = datetime.now(UTC)
         old_token = "expired-token-99999"
 
         # Create record with expired lease
@@ -271,7 +271,7 @@ class TestMultipleCrashes:
         5. Third request acquires lease and succeeds
         """
         fingerprint = "1" * 64
-        now = datetime.utcnow()
+        now = datetime.now(UTC)
 
         # First crash
         result1 = await storage.put_new_running("multi-crash-test", fingerprint, ttl_seconds=1)
@@ -327,7 +327,7 @@ class TestMultipleCrashes:
         After a crash and cleanup, the same request can retry.
         """
         fingerprint = "2" * 64
-        now = datetime.utcnow()
+        now = datetime.now(UTC)
 
         # Create crashed and expired record
         record = IdempotencyRecord(
@@ -355,7 +355,7 @@ class TestOrphanedRecordCleanup:
     @pytest.mark.asyncio
     async def test_cleanup_removes_only_expired_records(self, storage: MemoryStorageAdapter) -> None:
         """Test that cleanup removes only expired records, not active ones."""
-        now = datetime.utcnow()
+        now = datetime.now(UTC)
 
         # Create multiple records with different states and expiry
         records = [
@@ -405,7 +405,7 @@ class TestOrphanedRecordCleanup:
     @pytest.mark.asyncio
     async def test_cleanup_releases_locks_for_expired_records(self, storage: MemoryStorageAdapter) -> None:
         """Test that cleanup releases locks for expired records."""
-        now = datetime.utcnow()
+        now = datetime.now(UTC)
         key = "lock-cleanup-test"
 
         # Create expired record
@@ -433,7 +433,7 @@ class TestOrphanedRecordCleanup:
     @pytest.mark.asyncio
     async def test_bulk_cleanup_of_orphaned_records(self, storage: MemoryStorageAdapter) -> None:
         """Test cleanup of many orphaned RUNNING records at once."""
-        now = datetime.utcnow()
+        now = datetime.now(UTC)
 
         # Create many expired RUNNING records
         for i in range(10):
@@ -548,7 +548,7 @@ class TestLeaseConfiguration:
         assert record is not None
 
         # Expiry should be approximately now + TTL
-        now = datetime.utcnow()
+        now = datetime.now(UTC)
         expected_expiry = now + timedelta(seconds=ttl_seconds)
         time_diff = abs((record.expires_at - expected_expiry).total_seconds())
         assert time_diff < 5  # Within 5 seconds
@@ -574,7 +574,7 @@ class TestLeaseConfiguration:
         # Make it expired by manipulating the record
         record = await storage.get("quick-recovery-test")
         assert record is not None
-        now = datetime.utcnow()
+        now = datetime.now(UTC)
         record.expires_at = now - timedelta(seconds=1)  # Make it expired
         storage._store["quick-recovery-test"] = record
 
@@ -597,7 +597,7 @@ class TestRecoveryAfterCleanup:
         After cleanup, the system should function normally for new requests.
         """
         fingerprint = "4" * 64
-        now = datetime.utcnow()
+        now = datetime.now(UTC)
 
         # Create and cleanup crashed record
         record = IdempotencyRecord(
@@ -634,7 +634,7 @@ class TestRecoveryAfterCleanup:
 
         Even if many requests crash, cleanup ensures no permanent deadlocks.
         """
-        now = datetime.utcnow()
+        now = datetime.now(UTC)
         fingerprint = "5" * 64
 
         # Create multiple crashed records

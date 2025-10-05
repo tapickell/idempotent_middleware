@@ -91,7 +91,7 @@ def replay_response(record: IdempotencyRecord, key: str) -> ReplayedResponse:
         ...     StoredResponse,
         ...     RequestState
         ... )
-        >>> from datetime import datetime
+        >>> from datetime import UTC, datetime
         >>>
         >>> record = IdempotencyRecord(
         ...     key="payment-123",
@@ -105,8 +105,8 @@ def replay_response(record: IdempotencyRecord, key: str) -> ReplayedResponse:
         ...         },
         ...         body_b64="eyJyZXN1bHQiOiAic3VjY2VzcyJ9",
         ...     ),
-        ...     created_at=datetime.utcnow(),
-        ...     expires_at=datetime.utcnow(),
+        ...     created_at=datetime.now(UTC),
+        ...     expires_at=datetime.now(UTC),
         ... )
         >>>
         >>> response = replay_response(record, "payment-123")

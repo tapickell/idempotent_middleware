@@ -9,7 +9,7 @@ This module tests:
 
 import base64
 import json
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from uuid import uuid4
 
 import pytest
@@ -236,7 +236,7 @@ class TestIdempotencyRecord:
 
     def test_instantiation_with_required_fields(self) -> None:
         """Test creating an IdempotencyRecord with only required fields."""
-        created = datetime.utcnow()
+        created = datetime.now(UTC)
         expires = created + timedelta(hours=24)
 
         record = IdempotencyRecord(
@@ -259,7 +259,7 @@ class TestIdempotencyRecord:
 
     def test_instantiation_with_all_fields(self) -> None:
         """Test creating an IdempotencyRecord with all fields."""
-        created = datetime.utcnow()
+        created = datetime.now(UTC)
         expires = created + timedelta(hours=24)
         lease_token = str(uuid4())
         response = StoredResponse(
@@ -291,7 +291,7 @@ class TestIdempotencyRecord:
 
     def test_key_validation_empty(self) -> None:
         """Test that empty key is rejected."""
-        created = datetime.utcnow()
+        created = datetime.now(UTC)
         expires = created + timedelta(hours=24)
 
         with pytest.raises(ValidationError) as exc_info:
@@ -308,7 +308,7 @@ class TestIdempotencyRecord:
 
     def test_key_validation_too_long(self) -> None:
         """Test that key longer than 255 characters is rejected."""
-        created = datetime.utcnow()
+        created = datetime.now(UTC)
         expires = created + timedelta(hours=24)
 
         with pytest.raises(ValidationError) as exc_info:
@@ -325,7 +325,7 @@ class TestIdempotencyRecord:
 
     def test_fingerprint_validation_correct_length(self) -> None:
         """Test that fingerprint must be exactly 64 characters."""
-        created = datetime.utcnow()
+        created = datetime.now(UTC)
         expires = created + timedelta(hours=24)
 
         # Too short
@@ -350,7 +350,7 @@ class TestIdempotencyRecord:
 
     def test_fingerprint_validation_hex_only(self) -> None:
         """Test that fingerprint must contain only lowercase hex characters."""
-        created = datetime.utcnow()
+        created = datetime.now(UTC)
         expires = created + timedelta(hours=24)
 
         # Uppercase hex
@@ -375,7 +375,7 @@ class TestIdempotencyRecord:
 
     def test_fingerprint_validation_valid_hex(self) -> None:
         """Test that valid hex fingerprints are accepted."""
-        created = datetime.utcnow()
+        created = datetime.now(UTC)
         expires = created + timedelta(hours=24)
 
         valid_fingerprints = [
@@ -397,7 +397,7 @@ class TestIdempotencyRecord:
 
     def test_lease_token_validation_valid_uuid(self) -> None:
         """Test that valid UUIDs are accepted as lease tokens."""
-        created = datetime.utcnow()
+        created = datetime.now(UTC)
         expires = created + timedelta(hours=24)
 
         valid_uuids = [
@@ -419,7 +419,7 @@ class TestIdempotencyRecord:
 
     def test_lease_token_validation_invalid_uuid(self) -> None:
         """Test that invalid UUIDs are rejected as lease tokens."""
-        created = datetime.utcnow()
+        created = datetime.now(UTC)
         expires = created + timedelta(hours=24)
 
         invalid_uuids = [
@@ -445,7 +445,7 @@ class TestIdempotencyRecord:
 
     def test_expires_at_validation_after_created_at(self) -> None:
         """Test that expires_at must be after created_at."""
-        created = datetime.utcnow()
+        created = datetime.now(UTC)
 
         # expires_at before created_at
         with pytest.raises(ValidationError) as exc_info:
@@ -462,7 +462,7 @@ class TestIdempotencyRecord:
 
     def test_expires_at_validation_same_as_created_at(self) -> None:
         """Test that expires_at cannot equal created_at."""
-        created = datetime.utcnow()
+        created = datetime.now(UTC)
 
         with pytest.raises(ValidationError) as exc_info:
             IdempotencyRecord(
@@ -478,7 +478,7 @@ class TestIdempotencyRecord:
 
     def test_execution_time_ms_validation_non_negative(self) -> None:
         """Test that execution_time_ms must be non-negative."""
-        created = datetime.utcnow()
+        created = datetime.now(UTC)
         expires = created + timedelta(hours=24)
 
         with pytest.raises(ValidationError) as exc_info:
@@ -496,7 +496,7 @@ class TestIdempotencyRecord:
 
     def test_execution_time_ms_validation_zero_allowed(self) -> None:
         """Test that execution_time_ms can be zero."""
-        created = datetime.utcnow()
+        created = datetime.now(UTC)
         expires = created + timedelta(hours=24)
 
         record = IdempotencyRecord(
@@ -512,7 +512,7 @@ class TestIdempotencyRecord:
 
     def test_model_dump(self) -> None:
         """Test serializing model to dictionary."""
-        created = datetime.utcnow()
+        created = datetime.now(UTC)
         expires = created + timedelta(hours=24)
         response = StoredResponse(
             status=200,
@@ -543,7 +543,7 @@ class TestIdempotencyRecord:
 
     def test_model_dump_json(self) -> None:
         """Test serializing model to JSON string."""
-        created = datetime.utcnow()
+        created = datetime.now(UTC)
         expires = created + timedelta(hours=24)
 
         record = IdempotencyRecord(
@@ -564,7 +564,7 @@ class TestIdempotencyRecord:
 
     def test_model_validate(self) -> None:
         """Test deserializing model from dictionary."""
-        created = datetime.utcnow()
+        created = datetime.now(UTC)
         expires = created + timedelta(hours=24)
 
         data = {
@@ -587,7 +587,7 @@ class TestIdempotencyRecord:
 
     def test_model_validate_json(self) -> None:
         """Test deserializing model from JSON string."""
-        created = datetime.utcnow()
+        created = datetime.now(UTC)
         expires = created + timedelta(hours=24)
 
         json_str = json.dumps(
@@ -635,7 +635,7 @@ class TestLeaseResult:
 
     def test_instantiation_failure(self) -> None:
         """Test creating a failed LeaseResult."""
-        created = datetime.utcnow()
+        created = datetime.now(UTC)
         expires = created + timedelta(hours=24)
 
         existing_record = IdempotencyRecord(
@@ -670,7 +670,7 @@ class TestLeaseResult:
 
     def test_validation_success_cannot_have_existing_record(self) -> None:
         """Test that success=True cannot have an existing_record."""
-        created = datetime.utcnow()
+        created = datetime.now(UTC)
         expires = created + timedelta(hours=24)
 
         existing_record = IdempotencyRecord(
@@ -705,7 +705,7 @@ class TestLeaseResult:
 
     def test_validation_failure_cannot_have_lease_token(self) -> None:
         """Test that success=False cannot have a lease_token."""
-        created = datetime.utcnow()
+        created = datetime.now(UTC)
         expires = created + timedelta(hours=24)
 
         existing_record = IdempotencyRecord(
@@ -744,7 +744,7 @@ class TestLeaseResult:
 
     def test_model_dump_failure(self) -> None:
         """Test serializing a failed LeaseResult to dictionary."""
-        created = datetime.utcnow()
+        created = datetime.now(UTC)
         expires = created + timedelta(hours=24)
 
         existing_record = IdempotencyRecord(
@@ -801,7 +801,7 @@ class TestLeaseResult:
 
     def test_model_validate_json(self) -> None:
         """Test deserializing LeaseResult from JSON string."""
-        created = datetime.utcnow()
+        created = datetime.now(UTC)
         expires = created + timedelta(hours=24)
 
         json_str = json.dumps(

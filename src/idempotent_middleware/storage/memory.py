@@ -65,7 +65,7 @@ Examples:
 
 import asyncio
 import uuid
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 
 from idempotent_middleware.models import (
     IdempotencyRecord,
@@ -173,7 +173,7 @@ class MemoryStorageAdapter(StorageAdapter):
 
             # Create new RUNNING record with lease token
             lease_token = str(uuid.uuid4())
-            now = datetime.utcnow()
+            now = datetime.now(UTC)
             record = IdempotencyRecord(
                 key=key,
                 fingerprint=fingerprint,
@@ -298,7 +298,7 @@ class MemoryStorageAdapter(StorageAdapter):
         Returns:
             The number of records removed.
         """
-        now = datetime.utcnow()
+        now = datetime.now(UTC)
         expired_keys: list[str] = []
 
         # Find expired records
