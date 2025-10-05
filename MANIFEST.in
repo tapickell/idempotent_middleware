@@ -1,0 +1,19 @@
+include README.md
+include LICENSE
+include pyproject.toml
+include src/idempotent_middleware/py.typed
+
+# Exclude development and test files
+exclude demo_app.py
+exclude test_demo.sh
+recursive-exclude tests *
+recursive-exclude .github *
+recursive-exclude docs *
+exclude .gitignore
+exclude .pre-commit-config.yaml
+exclude STATUS.md
+exclude IMPLEMENTATION_PLAN.md
+
+# Include only necessary package files
+recursive-include src/idempotent_middleware *.py
+recursive-include src/idempotent_middleware py.typed

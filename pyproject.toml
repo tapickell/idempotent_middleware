@@ -5,21 +5,40 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "idempotent-middleware"
 version = "0.1.0"
-description = "Idempotency key middleware for Python web applications"
+description = "Production-ready idempotency middleware for Python web applications with FastAPI/Starlette support"
 readme = "README.md"
 requires-python = ">=3.10"
 license = {text = "MIT"}
 authors = [
-    {name = "Your Name", email = "your.email@example.com"}
+    {name = "Todd Pickell", email = "todd@example.com"}
+]
+keywords = [
+    "idempotency",
+    "middleware",
+    "fastapi",
+    "starlette",
+    "asgi",
+    "web",
+    "api",
+    "rest",
+    "distributed-systems",
+    "retry",
+    "concurrency",
 ]
 classifiers = [
-    "Development Status :: 3 - Alpha",
+    "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
     "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Framework :: FastAPI",
+    "Framework :: AsyncIO",
+    "Topic :: Internet :: WWW/HTTP :: WSGI :: Middleware",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: System :: Distributed Computing",
     "Typing :: Typed",
 ]
 dependencies = [
@@ -31,6 +50,13 @@ dependencies = [
     "python-dotenv>=1.0.0",
     "pyyaml>=6.0.1",
 ]
+
+[project.urls]
+Homepage = "https://github.com/toddpickell/idempotent-middleware"
+Documentation = "https://github.com/toddpickell/idempotent-middleware#readme"
+Repository = "https://github.com/toddpickell/idempotent-middleware"
+Issues = "https://github.com/toddpickell/idempotent-middleware/issues"
+Changelog = "https://github.com/toddpickell/idempotent-middleware/blob/main/CHANGELOG.md"
 
 [project.optional-dependencies]
 dev = [

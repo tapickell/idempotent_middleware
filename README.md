@@ -29,22 +29,38 @@ APIs that perform side effects (charge cards, create orders, send emails) must t
 
 ## 📦 Installation
 
+### From PyPI (Coming Soon)
+
+Once published to PyPI:
+
+```bash
+pip install idempotent-middleware
+```
+
+### From Source (Current)
+
 ```bash
 git clone <repository-url>
 cd idempotent_middleware
 pip install -e .
 ```
 
-### Dependencies
+### Core Dependencies
+
+Automatically installed:
+- `pydantic>=2.6.0` - Data validation
+- `starlette>=0.36.0` - ASGI support
+- `prometheus-client>=0.19.0` - Metrics
+- `structlog>=24.1.0` - Structured logging
+
+### Optional Dependencies
+
+For development and testing:
 
 ```bash
-# Core
-pip install pydantic>=2.6.0 starlette>=0.36.0
-
-# Optional
-pip install fastapi>=0.109.0 uvicorn[standard]>=0.27.0  # For FastAPI
-pip install prometheus-client>=0.19.0                    # For metrics
-pip install structlog>=24.1.0                            # For logging
+pip install idempotent-middleware[dev]  # Once on PyPI
+# Or manually:
+pip install pytest pytest-asyncio httpx hypothesis black ruff mypy
 ```
 
 ## 🚀 Quick Start

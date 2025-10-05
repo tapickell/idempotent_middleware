@@ -270,10 +270,55 @@ idempotent_middleware/
 
 ✅ **Datetime Deprecation Warnings Fixed** - All 86 instances of `datetime.utcnow()` replaced with `datetime.now(UTC)` across source and test files. No more Python 3.13+ deprecation warnings.
 
-## Next Steps
+✅ **PyPI Packaging Complete** - Package is now ready for publication to PyPI:
+- Enhanced `pyproject.toml` with proper metadata, keywords, and classifiers
+- Created MIT `LICENSE` file
+- Added `MANIFEST.in` for distribution file control
+- Built and validated distributions (wheel + source)
+- Created comprehensive `PUBLISHING.md` guide
+- Ready to publish with: `twine upload dist/*`
 
-### Immediate (Optional)
-1. **Package for PyPI** (optional) - Make it pip-installable
+## Installation (After PyPI Publication)
+
+Once published, users can install via pip:
+
+```bash
+pip install idempotent-middleware
+```
+
+For now, install from source:
+
+```bash
+git clone <repository-url>
+cd idempotent_middleware
+pip install -e .
+```
+
+## Publishing to PyPI
+
+See [PUBLISHING.md](./PUBLISHING.md) for detailed instructions on:
+- Setting up PyPI accounts and API tokens
+- Building and validating the package
+- Testing on Test PyPI
+- Publishing to production PyPI
+- Automated publishing with GitHub Actions
+
+Quick publish:
+```bash
+# Build
+python -m build
+
+# Validate
+twine check dist/*
+
+# Upload to Test PyPI (recommended first)
+twine upload --repository testpypi dist/*
+
+# Upload to PyPI
+twine upload dist/*
+```
+
+## Next Steps
 
 ### Future (Nice-to-Have)
 1. **Redis adapter** (2-3 hours) - For distributed deployments
